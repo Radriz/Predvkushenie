@@ -1,91 +1,78 @@
 import assert from "node:assert/strict";
-import { access, readFile, readdir } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import test from "node:test";
+import { getCalendarRange } from "../app/lib/calendar.ts";
+import { occasions as occasionData } from "../app/lib/occasions.ts";
 
-const developmentPreviewMeta =
-  /<meta(?=[^>]*\bname=["']codex-preview["'])(?=[^>]*\bcontent=["']development["'])[^>]*>/i;
-const templateRoot = new URL("../", import.meta.url);
-const previewRoot = new URL("../app/_sites-preview/", import.meta.url);
-
-async function render() {
-  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
-  workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
-  const { default: worker } = await import(workerUrl.href);
-
-  return worker.fetch(
-    new Request("http://localhost/", {
-      headers: { accept: "text/html" },
-    }),
-    {
-      ASSETS: {
-        fetch: async () => new Response("Not found", { status: 404 }),
-      },
-    },
-    {
-      waitUntil() {},
-      passThroughOnException() {},
-    },
-  );
+const routes = [
+  "/",
+  "/wedding", "/birthday", "/kids", "/business", "/anniversary", "/baby",
+  "/demo/wedding", "/demo/birthday", "/demo/kids", "/demo/business", "/demo/anniversary", "/demo/baby",
+  "/order", "/privacy", "/terms",
+];
+const occasions = ["wedding", "birthday", "kids", "business", "anniversary", "baby"];
+function compactUtc(value) {
+  return Date.UTC(+value.slice(0, 4), +value.slice(4, 6) - 1, +value.slice(6, 8), +value.slice(9, 11), +value.slice(11, 13), +value.slice(13, 15));
 }
 
-test("server-renders the starter loading skeleton", async () => {
-  const response = await render();
-  assert.equal(response.status, 200);
-  assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
+async function inspectMp4(url) {
+  const bytes = await readFile(url);
+  assert.equal(bytes.subarray(4, 8).toString("ascii"), "ftyp", `${url} has no MP4 signature`);
+  const marker = Buffer.from("avc1");
+  for (let avc1 = bytes.indexOf(marker); avc1 > 0; avc1 = bytes.indexOf(marker, avc1 + marker.length)) {
+    const dimensions = { width: bytes.readUInt16BE(avc1 + 28), height: bytes.readUInt16BE(avc1 + 30) };
+    if (dimensions.width > 0 && dimensions.height > 0) return dimensions;
+  }
+  assert.fail(`${url} has no H.264/AVC video track`);
+}
 
-  const html = await response.text();
-  assert.match(html, developmentPreviewMeta);
-  assert.match(html, /<title>Your site is taking shape<\/title>/i);
-  assert.match(html, /Building your site/);
-  assert.match(html, /Your site is taking shape/);
-  assert.match(
-    html,
-    /Your first version will appear here automatically when it’s ready\./,
-  );
-  assert.doesNotMatch(html, /Codex/);
-  assert.match(html, /react-loading-skeleton/);
-  assert.match(html, /role="status"/);
+async function loadWorker() {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
+  return (await import(workerUrl.href)).default;
+}
+
+function environment() {
+  return { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } };
+}
+
+test("server-renders every public route", async () => {
+  const worker = await loadWorker();
+  for (const route of routes) {
+    const response = await worker.fetch(
+      new Request(`http://localhost${route}`, { headers: { accept: "text/html" } }),
+      environment(),
+      { waitUntil() {}, passThroughOnException() {} },
+    );
+    assert.equal(response.status, 200, route);
+    assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i, route);
+    const html = await response.text();
+    assert.match(html, /ПРЕДВКУСИЕ|Открыть приглашение/i, route);
+    assert.doesNotMatch(html, /Your site is taking shape|Building your site/i, route);
+  }
 });
 
-test("keeps the loading skeleton scoped and disposable", async () => {
-  const [preview, css, page, layout, packageJson, files] = await Promise.all([
-    readFile(new URL("SkeletonPreview.tsx", previewRoot), "utf8"),
-    readFile(new URL("preview.css", previewRoot), "utf8"),
-    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../package.json", import.meta.url), "utf8"),
-    readdir(previewRoot),
-  ]);
+test("calendar ranges follow every occasion schedule", () => {
+  for (const occasion of Object.values(occasionData)) {
+    const [startHour, startMinute] = occasion.schedule[0].time.split(":").map(Number);
+    const [endHour, endMinute] = occasion.schedule.at(-1).time.split(":").map(Number);
+    let scheduleMinutes = (endHour * 60 + endMinute) - (startHour * 60 + startMinute);
+    if (scheduleMinutes < 0) scheduleMinutes += 24 * 60;
+    assert.equal(occasion.durationMinutes, scheduleMinutes, `${occasion.slug} duration follows schedule`);
+    const range = getCalendarRange(occasion.targetDate, occasion.durationMinutes);
+    assert.equal((compactUtc(range.end) - compactUtc(range.start)) / 60_000, scheduleMinutes, `${occasion.slug} calendar range`);
+  }
+});
 
-  assert.deepEqual(files.sort(), ["SkeletonPreview.tsx", "preview.css"]);
-  assert.match(preview, /from "react-loading-skeleton"/);
-  assert.match(preview, /baseColor="#eceae7"/);
-  assert.match(preview, /highlightColor="#f9f8f6"/);
-  assert.match(preview, /duration=\{2\.8\}/);
-  assert.match(preview, /sites-skeleton-search-placeholder/);
-  assert.match(packageJson, /"react-loading-skeleton": "3\.5\.0"/);
-
-  const shellIndex = preview.indexOf('className="sites-skeleton-shell"');
-  const statusIndex = preview.indexOf('className="sites-skeleton-status"');
-  assert.ok(shellIndex >= 0 && statusIndex > shellIndex);
-  assert.match(css, /position:\s*fixed/);
-  assert.match(css, /inset:\s*0/);
-  assert.match(css, /opacity:\s*0\.52/);
-  assert.match(css, /prefers-reduced-motion:\s*reduce/);
-  assert.doesNotMatch(css, /#020617|canvas|pets|progress/i);
-  assert.doesNotMatch(
-    preview,
-    /loading-spinner|status-mark|status-progress|canvas|cookie|random/i,
-  );
-
-  assert.match(page, /export const metadata:\s*Metadata/);
-  assert.match(page, /"codex-preview": "development"/);
-  assert.match(page, /<SkeletonPreview \/>/);
-  assert.match(layout, /title:\s*"Starter Project"/);
-  assert.doesNotMatch(layout, /codex-preview|_sites-preview|themeColor|\bViewport\b/);
-  assert.doesNotMatch(css, /(^|\s)(html|body)\s*\{/m);
-
-  await assert.rejects(
-    access(new URL("public/_sites-preview", templateRoot)),
-  );
+test("ships high-quality desktop and mobile video for every occasion", async () => {
+  for (const occasion of occasions) {
+    const desktopUrl = new URL(`../public/media/${occasion}-hd.mp4`, import.meta.url);
+    const mobileUrl = new URL(`../public/media/${occasion}-mobile-hq.mp4`, import.meta.url);
+    const desktop = await stat(desktopUrl);
+    const mobile = await stat(mobileUrl);
+    assert.ok(desktop.size > 500_000, `${occasion} desktop video is unexpectedly small`);
+    assert.ok(mobile.size > 350_000, `${occasion} mobile video is unexpectedly small`);
+    assert.deepEqual(await inspectMp4(desktopUrl), { width: 1280, height: 720 }, `${occasion} desktop dimensions`);
+    assert.deepEqual(await inspectMp4(mobileUrl), { width: 960, height: 540 }, `${occasion} mobile dimensions`);
+  }
 });

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { occasionList } from "./lib/occasions";
 import { SiteFooter } from "./components/SiteHeader";
+import { EventVideo } from "./components/EventVideo";
 
 const occasions = ["Свадьба", "День рождения", "Детский праздник", "Бизнес", "Юбилей", "Baby"];
 
@@ -25,7 +26,7 @@ export default function Home() {
           <div className="trust-row"><span>6 уникальных режиссур</span><span>RSVP за 20 секунд</span><span>готовность от 5 дней</span></div>
         </div>
         <div className="hero-visual" aria-label="Пример приглашения на свадьбу">
-          <div className="hero-film"><video autoPlay muted loop playsInline poster="/media/wedding.jpg"><source src="/media/wedding-mobile.mp4" media="(max-width: 640px)" type="video/mp4"/><source src="/media/wedding.webm" type="video/webm"/><source src="/media/wedding.mp4" type="video/mp4"/></video></div>
+          <div className="hero-film"><EventVideo slug="wedding" /></div>
           <div className="orbital orbital-one" /><div className="orbital orbital-two" />
           <div className="phone">
             <div className="phone-top"><span /></div>
@@ -51,7 +52,7 @@ export default function Home() {
       </section>
       <section className="direction-showcase" id="directions">
         <header><p>ШЕСТЬ НАПРАВЛЕНИЙ</p><h2>У каждого повода<br/>свой визуальный голос.</h2></header>
-        <div className="direction-grid">{occasionList.map(item=><Link href={`/${item.slug}`} className={`direction-card card-${item.slug}`} key={item.slug} style={{"--card-accent":item.accent,"--card-surface":item.surface,"--card-text":item.text} as React.CSSProperties}><div className="direction-image"><video autoPlay muted loop playsInline poster={`/media/${item.slug}.jpg`}><source src={`/media/${item.slug}-mobile.mp4`} media="(max-width: 640px)" type="video/mp4"/><source src={`/media/${item.slug}.webm`} type="video/webm"/><source src={`/media/${item.slug}.mp4`} type="video/mp4"/></video><span>{item.number}</span></div><div><p>{item.eyebrow}</p><h3>{item.short}</h3><span>{item.line}</span><b>↗</b></div></Link>)}</div>
+        <div className="direction-grid">{occasionList.map(item=><Link href={`/${item.slug}`} className={`direction-card card-${item.slug}`} key={item.slug} style={{"--card-accent":item.accent,"--card-surface":item.surface,"--card-text":item.text} as React.CSSProperties}><div className="direction-image"><EventVideo slug={item.slug}/><span>{item.number}</span></div><div><p>{item.eyebrow}</p><h3>{item.short}</h3><span>{item.line}</span><b>↗</b></div></Link>)}</div>
       </section>
       <section className="home-preview">
         <div className="home-preview-phone"><div><small>ПЕРСОНАЛЬНО ДЛЯ ВАС</small><h3>АЛЕКСЕЙ<br/><i>&amp;</i> СОФИЯ</h3><p>12 · 09 · 2026</p><button>Открыть приглашение</button></div></div>
