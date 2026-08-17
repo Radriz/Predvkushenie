@@ -7,6 +7,7 @@ import {CaseVideo} from "../CaseVideo";
 import {MidnightAtlasCase} from "../MidnightAtlasCase";
 import {SaffronTideCase} from "../SaffronTideCase";
 import {PrivatePremiereCase} from "../PrivatePremiereCase";
+import {PhotoInvitationCase} from "../PhotoInvitationCase";
 import {getInvitationCase,invitationCases} from "../../lib/cases";
 
 export function generateStaticParams(){return invitationCases.map(item=>({slug:item.slug}))}
@@ -23,6 +24,7 @@ export default async function InvitationCasePage({params}:{params:Promise<{slug:
   if(item.slug==="wedding-midnight-atlas")return <MidnightAtlasCase item={item}/>;
   if(item.slug==="wedding-saffron-tide")return <SaffronTideCase item={item}/>;
   if(item.slug==="birthday-private-premiere")return <PrivatePremiereCase item={item}/>;
+  if(!item.video)return <PhotoInvitationCase item={item}/>;
   return <main className="glass-case" style={{"--case-ivory":item.palette[0],"--case-sand":item.palette[1],"--case-sage":item.palette[2],"--case-ink":item.palette[3]} as React.CSSProperties}>
     <nav className="case-topbar"><Link href="/cases">Все кейсы</Link><span>ПРЕДВКУСИЕ · ПРИМЕР</span><Link href="/order?event=wedding">Создать своё ↗</Link></nav>
     <section className="glass-hero">

@@ -3,12 +3,13 @@ import { readFile, stat } from "node:fs/promises";
 import test from "node:test";
 import { getCalendarRange } from "../app/lib/calendar.ts";
 import { occasions as occasionData } from "../app/lib/occasions.ts";
+import { invitationCases } from "../app/lib/cases.ts";
 
 const routes = [
   "/",
   "/wedding", "/birthday", "/kids", "/business", "/anniversary", "/baby",
   "/demo/wedding", "/demo/birthday", "/demo/kids", "/demo/business", "/demo/anniversary", "/demo/baby",
-  "/cases", "/cases/wedding-glass-garden", "/cases/wedding-midnight-atlas", "/cases/wedding-saffron-tide", "/cases/birthday-private-premiere", "/order", "/privacy", "/terms",
+  "/cases", ...invitationCases.map(item => `/cases/${item.slug}`), "/order", "/privacy", "/terms",
 ];
 const occasions = ["wedding", "birthday", "kids", "business", "anniversary", "baby"];
 function compactUtc(value) {
@@ -92,5 +93,14 @@ test("ships optimized cinematic media for published cases", async () => {
     assert.ok(image.size > item.minImage && image.size < 1_000_000, `${item.slug} poster should retain detail without shipping the raw source`);
     assert.ok(video.size > 1_500_000 && video.size < 5_000_000, `${item.slug} video should be detailed and web-sized`);
     assert.deepEqual(await inspectMp4(videoUrl), item.dimensions, `${item.slug} video dimensions`);
+  }
+});
+
+test("ships five cases for every event type and optimized photography for photo cases", async () => {
+  assert.equal(invitationCases.length, 30);
+  for (const occasion of occasions) assert.equal(invitationCases.filter(item => item.eventType === occasion).length, 5, occasion);
+  for (const item of invitationCases.filter(item => !item.video)) {
+    const image = await stat(new URL(`../public${item.image}`, import.meta.url));
+    assert.ok(image.size > 45_000 && image.size < 500_000, `${item.slug} image should be detailed and web-sized`);
   }
 });

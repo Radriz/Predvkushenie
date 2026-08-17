@@ -7,7 +7,7 @@ export function PrivatePremiereCase({item}:{item:InvitationCase}){
   return <main className="premiere-case" style={{"--premiere-night":item.palette[0],"--premiere-blue":item.palette[1],"--premiere-pink":item.palette[2],"--premiere-silver":item.palette[3]} as React.CSSProperties}>
     <nav className="premiere-nav"><Link href="/cases">Все кейсы</Link><span>ПРЕДВКУСИЕ · ЛИЧНАЯ ПРЕМЬЕРА</span><Link href="/order?event=birthday">Создать своё ↗</Link></nav>
     <section className="premiere-hero">
-      <div className="premiere-hero-media"><CaseVideo src={item.video} poster={item.image}/></div><div className="premiere-hero-shade"/><div className="premiere-perforation left"/><div className="premiere-perforation right"/>
+      <div className="premiere-hero-media"><CaseVideo src={item.video!} poster={item.image}/></div><div className="premiere-hero-shade"/><div className="premiere-perforation left"/><div className="premiere-perforation right"/>
       <div className="premiere-hero-copy"><p>ПЕРСОНАЛЬНЫЙ БИЛЕТ ДЛЯ МИШИ И ЛЕРЫ</p><div><strong>34</strong><h1>ИННА</h1></div><footer><time>23 · 01 · 27</time><span>НАЧАЛО · 19:30</span><b>МОСКВА</b></footer></div>
       <p className="premiere-scroll">Смотреть дальше ↓</p>
     </section>

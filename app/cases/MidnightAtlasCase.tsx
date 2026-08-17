@@ -7,7 +7,7 @@ export function MidnightAtlasCase({item}:{item:InvitationCase}){
   return <main className="atlas-case" style={{"--atlas-night":item.palette[0],"--atlas-blue":item.palette[1],"--atlas-silver":item.palette[2],"--atlas-red":item.palette[3]} as React.CSSProperties}>
     <nav className="atlas-nav"><Link href="/cases">Коллекция</Link><span>ПРЕДВКУСИЕ · НОЧНОЙ МАРШРУТ</span><Link href="/order?event=wedding">Создать своё ↗</Link></nav>
     <section className="atlas-hero">
-      <div className="atlas-hero-media"><CaseVideo src={item.video} poster={item.image}/></div>
+      <div className="atlas-hero-media"><CaseVideo src={item.video!} poster={item.image}/></div>
       <div className="atlas-grid"/>
       <div className="atlas-hero-copy"><p>ПЕРСОНАЛЬНО ДЛЯ КАТИ И АНДРЕЯ</p><h1><span>ВЕРА</span><i>×</i><span>НИКИТА</span></h1><div><time>{item.date}</time><b>18:40 · МОСКВА</b></div></div>
       <aside><span>55°49′41″ N</span><span>37°38′46″ E</span></aside>

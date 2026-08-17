@@ -1,3 +1,5 @@
+import {photoCases} from "./photo-cases.ts";
+
 export type InvitationCase = {
   slug:string;
   eventType:"wedding"|"birthday"|"kids"|"business"|"anniversary"|"baby";
@@ -11,7 +13,7 @@ export type InvitationCase = {
   address:string;
   mapUrl:string;
   image:string;
-  video:string;
+  video?:string;
   palette:string[];
   description:string;
   greeting:string;
@@ -20,6 +22,12 @@ export type InvitationCase = {
   giftNote:string;
   contact:string;
   program:{time:string;title:string;note:string}[];
+  variant?:"split"|"poster"|"journal"|"frame"|"orbit";
+  guestLine?:string;
+  heroLine?:string;
+  photoAlt?:string;
+  detailTitle?:string;
+  formPrompt?:string;
 };
 
 export const invitationCases:InvitationCase[]=[{
@@ -130,6 +138,6 @@ export const invitationCases:InvitationCase[]=[{
     {time:"20:45",title:"Ужин в фойе",note:"Три подачи и тосты без микрофона"},
     {time:"23:40",title:"После титров",note:"Диджей, торт и свободный финал"},
   ],
-}];
+},...photoCases];
 
 export function getInvitationCase(slug:string){return invitationCases.find(item=>item.slug===slug)}

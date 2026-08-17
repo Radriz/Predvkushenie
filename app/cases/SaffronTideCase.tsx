@@ -7,7 +7,7 @@ export function SaffronTideCase({item}:{item:InvitationCase}){
   return <main className="tide-case" style={{"--tide-shell":item.palette[0],"--tide-saffron":item.palette[1],"--tide-sea":item.palette[2],"--tide-clay":item.palette[3]} as React.CSSProperties}>
     <nav className="tide-nav"><Link href="/cases">Все истории</Link><span>ПРЕДВКУСИЕ · У МОРЯ</span><Link href="/order?event=wedding">Создать своё ↗</Link></nav>
     <section className="tide-hero">
-      <div className="tide-hero-media"><CaseVideo src={item.video} poster={item.image}/></div>
+      <div className="tide-hero-media"><CaseVideo src={item.video!} poster={item.image}/></div>
       <div className="tide-hero-wash"/>
       <div className="tide-hero-copy"><p>ПЕРСОНАЛЬНО ДЛЯ СЕРЁЖИ И ДАШИ</p><h1><span>Алиса</span><i>&amp;</i><span>Матвей</span></h1><div><time>05 · 09 · 27</time><b>СОЧИ · 16:00</b></div></div>
       <p className="tide-scroll">Поймайте наш ритм ↓</p>
