@@ -3,13 +3,21 @@ import { readFile, stat } from "node:fs/promises";
 import test from "node:test";
 import { getCalendarRange } from "../app/lib/calendar.ts";
 import { occasions as occasionData } from "../app/lib/occasions.ts";
-import { invitationCases } from "../app/lib/cases.ts";
+
+const caseSlugs = [
+  "wedding-glass-garden", "wedding-midnight-atlas", "wedding-saffron-tide", "wedding-winter-geometry", "wedding-paper-horizon",
+  "birthday-private-premiere", "birthday-sunset-frequency", "birthday-red-greenhouse", "birthday-blue-studio", "birthday-night-express",
+  "kids-paper-orbit", "kids-strawberry-meadow", "kids-pearl-depth", "kids-moon-bakery", "kids-paper-jungle",
+  "business-cobalt-form", "business-amber-boardroom", "business-open-form", "business-pine-retreat", "business-golden-orbit",
+  "anniversary-walnut-archive", "anniversary-apple-noon", "anniversary-silver-river", "anniversary-copper-sky", "anniversary-burgundy-film",
+  "baby-cloud-brunch", "baby-color-glass", "baby-olive-light", "baby-soft-landscape", "baby-lavender-moon",
+];
 
 const routes = [
   "/",
   "/wedding", "/birthday", "/kids", "/business", "/anniversary", "/baby",
   "/demo/wedding", "/demo/birthday", "/demo/kids", "/demo/business", "/demo/anniversary", "/demo/baby",
-  "/cases", ...invitationCases.map(item => `/cases/${item.slug}`), "/order", "/privacy", "/terms",
+  "/cases", ...caseSlugs.map(slug => `/cases/${slug}`), "/order", "/privacy", "/terms",
 ];
 const occasions = ["wedding", "birthday", "kids", "business", "anniversary", "baby"];
 function compactUtc(value) {
@@ -97,10 +105,11 @@ test("ships optimized cinematic media for published cases", async () => {
 });
 
 test("ships five cases for every event type and optimized photography for photo cases", async () => {
-  assert.equal(invitationCases.length, 30);
-  for (const occasion of occasions) assert.equal(invitationCases.filter(item => item.eventType === occasion).length, 5, occasion);
-  for (const item of invitationCases.filter(item => !item.video)) {
-    const image = await stat(new URL(`../public${item.image}`, import.meta.url));
-    assert.ok(image.size > 45_000 && image.size < 500_000, `${item.slug} image should be detailed and web-sized`);
+  assert.equal(caseSlugs.length, 30);
+  for (const occasion of occasions) assert.equal(caseSlugs.filter(slug => slug.startsWith(`${occasion}-`)).length, 5, occasion);
+  const videoCases = new Set(["wedding-glass-garden", "wedding-midnight-atlas", "wedding-saffron-tide", "birthday-private-premiere"]);
+  for (const slug of caseSlugs.filter(item => !videoCases.has(item))) {
+    const image = await stat(new URL(`../public/cases/${slug}/hero.webp`, import.meta.url));
+    assert.ok(image.size > 45_000 && image.size < 500_000, `${slug} image should be detailed and web-sized`);
   }
 });

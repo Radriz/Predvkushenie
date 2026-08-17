@@ -1,4 +1,4 @@
-import type {InvitationCase} from "./cases.ts";
+import type {InvitationCase} from "./cases";
 
 type PhotoSeed=Omit<InvitationCase,"image"|"mapUrl"|"contact"|"video"> & {host:string};
 

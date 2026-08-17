@@ -1,4 +1,4 @@
-import {photoCases} from "./photo-cases.ts";
+import {photoCases} from "./photo-cases";
 
 export type InvitationCase = {
   slug:string;
