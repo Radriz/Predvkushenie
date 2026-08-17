@@ -18,6 +18,6 @@ export default function CasesPage(){return <main className="cases-page">
       <div><p>{item.city} · {item.date}</p><h2>{item.title}</h2><span>{item.couple}</span><b>Открыть кейс ↗</b></div>
     </Link>)}
   </section>
-  <section className="cases-progress"><p>КОЛЛЕКЦИЯ РАСТЁТ</p><h2>Первый из<br/>ста двадцати</h2><span>Новые истории добавляются по одной — каждая проходит отдельную визуальную и техническую проверку</span></section>
+  <section className="cases-progress"><p>КОЛЛЕКЦИЯ РАСТЁТ</p><h2>{invitationCases.length} из<br/>120 историй</h2><span>Новые истории добавляются по одной — каждая проходит отдельную визуальную и техническую проверку</span></section>
   <SiteFooter/>
 </main>}
