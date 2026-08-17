@@ -8,7 +8,7 @@ const routes = [
   "/",
   "/wedding", "/birthday", "/kids", "/business", "/anniversary", "/baby",
   "/demo/wedding", "/demo/birthday", "/demo/kids", "/demo/business", "/demo/anniversary", "/demo/baby",
-  "/cases", "/cases/wedding-glass-garden", "/cases/wedding-midnight-atlas", "/cases/wedding-saffron-tide", "/order", "/privacy", "/terms",
+  "/cases", "/cases/wedding-glass-garden", "/cases/wedding-midnight-atlas", "/cases/wedding-saffron-tide", "/cases/birthday-private-premiere", "/order", "/privacy", "/terms",
 ];
 const occasions = ["wedding", "birthday", "kids", "business", "anniversary", "baby"];
 function compactUtc(value) {
@@ -82,6 +82,7 @@ test("ships optimized cinematic media for published cases", async () => {
     { slug: "wedding-glass-garden", minImage: 250_000, dimensions: { width: 1280, height: 720 } },
     { slug: "wedding-midnight-atlas", minImage: 150_000, dimensions: { width: 1904, height: 1088 } },
     { slug: "wedding-saffron-tide", minImage: 150_000, dimensions: { width: 1280, height: 720 } },
+    { slug: "birthday-private-premiere", minImage: 120_000, dimensions: { width: 1280, height: 720 } },
   ];
   for (const item of cases) {
     const imageUrl = new URL(`../public/cases/${item.slug}/hero.webp`, import.meta.url);
