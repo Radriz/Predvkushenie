@@ -8,7 +8,7 @@ const routes = [
   "/",
   "/wedding", "/birthday", "/kids", "/business", "/anniversary", "/baby",
   "/demo/wedding", "/demo/birthday", "/demo/kids", "/demo/business", "/demo/anniversary", "/demo/baby",
-  "/order", "/privacy", "/terms",
+  "/cases", "/cases/wedding-glass-garden", "/order", "/privacy", "/terms",
 ];
 const occasions = ["wedding", "birthday", "kids", "business", "anniversary", "baby"];
 function compactUtc(value) {
@@ -75,4 +75,14 @@ test("ships high-quality desktop and mobile video for every occasion", async () 
     assert.deepEqual(await inspectMp4(desktopUrl), { width: 1280, height: 720 }, `${occasion} desktop dimensions`);
     assert.deepEqual(await inspectMp4(mobileUrl), { width: 960, height: 540 }, `${occasion} mobile dimensions`);
   }
+});
+
+test("ships optimized cinematic media for published cases", async () => {
+  const imageUrl = new URL("../public/cases/wedding-glass-garden/hero.webp", import.meta.url);
+  const videoUrl = new URL("../public/cases/wedding-glass-garden/hero.mp4", import.meta.url);
+  const image = await stat(imageUrl);
+  const video = await stat(videoUrl);
+  assert.ok(image.size > 250_000 && image.size < 1_000_000, "case poster should retain detail without shipping the raw source");
+  assert.ok(video.size > 1_500_000 && video.size < 5_000_000, "case video should be detailed and web-sized");
+  assert.deepEqual(await inspectMp4(videoUrl), { width: 1280, height: 720 }, "case video dimensions");
 });
