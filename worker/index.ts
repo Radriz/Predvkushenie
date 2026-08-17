@@ -89,7 +89,12 @@ async function notifyEmail(env: Env, lead: Record<string, unknown>): Promise<boo
   const recipient = env.LEADS_EMAIL || "radiksun@list.ru";
   const response = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(recipient)}`, {
     method: "POST",
-    headers: { "content-type": "application/json", accept: "application/json" },
+    headers: {
+      "content-type": "application/json",
+      accept: "application/json",
+      origin: "https://predvkushenie-invite.modest-glade-7892.chatgpt.site",
+      referer: "https://predvkushenie-invite.modest-glade-7892.chatgpt.site/order",
+    },
     body: JSON.stringify({
       _subject: `Новая заявка · ПРЕДВКУСИЕ · ${lead.name}`,
       _template: "table",

@@ -52,7 +52,12 @@ export async function POST(request: Request) {
     const deliveries: Promise<boolean>[] = [
       fetch(`https://formsubmit.co/ajax/${encodeURIComponent(leadsEmail)}`, {
         method: "POST",
-        headers: { "content-type": "application/json", accept: "application/json" },
+        headers: {
+          "content-type": "application/json",
+          accept: "application/json",
+          origin: "https://predvkushenie.vercel.app",
+          referer: "https://predvkushenie.vercel.app/order",
+        },
         body: JSON.stringify(emailPayload),
         signal: AbortSignal.timeout(8000),
       }).then(response => response.ok).catch(() => false),
