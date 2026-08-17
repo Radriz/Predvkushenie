@@ -1,4 +1,5 @@
 const allowedEvents = new Set(["wedding", "birthday", "kids", "business", "anniversary", "baby"]);
+const defaultLeadsEmail = "radiksun@list.ru";
 
 function clean(value: unknown, max = 500) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -16,17 +17,10 @@ export async function POST(request: Request) {
       return Response.json({ error: "invalid_request" }, { status: 400 });
     }
 
-    const botToken = process.env.TELEGRAM_BOT_TOKEN;
-    const chatId = process.env.TELEGRAM_CHAT_ID;
-    if (!botToken || !chatId) {
-      console.error("[api/leads] Telegram environment is not configured");
-      return Response.json({ error: "service_not_configured" }, { status: 503 });
-    }
-
     const modules = Array.isArray(data.modules)
       ? data.modules.map((item) => clean(item, 60)).filter(Boolean).slice(0, 12)
       : [];
-    const message = [
+    const lines = [
       "Новая заявка · ПРЕДВКУСИЕ",
       `Повод: ${eventType}`,
       `Имя: ${name}`,
@@ -37,18 +31,45 @@ export async function POST(request: Request) {
       `Стиль: ${clean(data.selectedStyle, 100) || "—"}`,
       `Модули: ${modules.join(", ") || "—"}`,
       `Сообщение: ${clean(data.message, 2000) || "—"}`,
-    ].join("\n");
+    ];
+    const message = lines.join("\n");
+    const leadsEmail = process.env.LEADS_EMAIL || defaultLeadsEmail;
+    const emailPayload = {
+      _subject: `Новая заявка · ПРЕДВКУСИЕ · ${name}`,
+      _template: "table",
+      _captcha: "false",
+      Повод: eventType,
+      Имя: name,
+      Контакт: contact,
+      Дата: clean(data.eventDate, 30) || "Не указана",
+      Город: clean(data.city, 120) || "Не указан",
+      Гостей: Math.max(0, Math.min(100000, Number(data.guestCount) || 0)) || "Не указано",
+      Бюджет: clean(data.budget, 80) || "Не указан",
+      Стиль: clean(data.selectedStyle, 100) || "Не указан",
+      Дополнения: modules.join(", ") || "Не указаны",
+      Сообщение: clean(data.message, 2000) || "Нет сообщения",
+    };
+    const deliveries: Promise<boolean>[] = [
+      fetch(`https://formsubmit.co/ajax/${encodeURIComponent(leadsEmail)}`, {
+        method: "POST",
+        headers: { "content-type": "application/json", accept: "application/json" },
+        body: JSON.stringify(emailPayload),
+        signal: AbortSignal.timeout(8000),
+      }).then(response => response.ok).catch(() => false),
+    ];
 
-    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, text: message }),
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!response.ok) {
-      console.error("[api/leads] Telegram notification failed", { status: response.status });
-      return Response.json({ error: "notification_failed" }, { status: 502 });
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
+    if (botToken && chatId) {
+      deliveries.push(fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, text: message }),
+        signal: AbortSignal.timeout(8000),
+      }).then(response => response.ok).catch(() => false));
     }
+    const delivered = (await Promise.all(deliveries)).some(Boolean);
+    if (!delivered) return Response.json({ error: "notification_failed" }, { status: 502 });
 
     return Response.json({ ok: true }, { status: 201 });
   } catch (error) {

@@ -7,6 +7,7 @@ interface Env {
   DB: D1Database;
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_CHAT_ID?: string;
+  LEADS_EMAIL?: string;
   IMAGES: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
@@ -67,7 +68,7 @@ async function handleLead(request: Request, env: Env, ctx: ExecutionContext): Pr
     ]);
     const values = { id, createdAt: Date.now(), eventType, name, contact, eventDate:clean(data.eventDate,30), city:clean(data.city,120), guestCount:Math.max(0,Math.min(100000,Number(data.guestCount)||0)), budget:clean(data.budget,80), selectedStyle:clean(data.selectedStyle,100), modules:JSON.stringify(modules), musicMood:clean(data.musicMood,100), message:clean(data.message,2000), source:clean(data.source,80)||"website" };
     await env.DB.prepare("INSERT OR IGNORE INTO leads (id, created_at, event_type, name, contact, event_date, city, guest_count, budget, selected_style, modules, music_mood, message, source, notify_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')").bind(values.id,values.createdAt,values.eventType,values.name,values.contact,values.eventDate,values.city,values.guestCount,values.budget,values.selectedStyle,values.modules,values.musicMood,values.message,values.source).run();
-    if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID) ctx.waitUntil(notifyTelegram(env, values).then(status => env.DB.prepare("UPDATE leads SET notify_status = ? WHERE id = ?").bind(status,id).run()).catch(()=>env.DB.prepare("UPDATE leads SET notify_status = 'failed' WHERE id = ?").bind(id).run()));
+    ctx.waitUntil(notifyLead(env, values).then(status => env.DB.prepare("UPDATE leads SET notify_status = ? WHERE id = ?").bind(status,id).run()).catch(()=>env.DB.prepare("UPDATE leads SET notify_status = 'failed' WHERE id = ?").bind(id).run()));
     return Response.json({ ok: true, id }, { status: 201 });
   } catch { return Response.json({ error: "server_error" }, { status: 500 }); }
 }
@@ -76,6 +77,36 @@ async function notifyTelegram(env: Env, lead: Record<string, unknown>): Promise<
   const text = [`Новая заявка · ПРЕДВКУСИЕ`,`Повод: ${lead.eventType}`,`Имя: ${lead.name}`,`Контакт: ${lead.contact}`,`Дата / город: ${lead.eventDate || "—"} · ${lead.city || "—"}`,`Гостей: ${lead.guestCount || "—"}`,`Бюджет: ${lead.budget || "—"}`,`Стиль: ${lead.selectedStyle || "—"}`,`Модули: ${JSON.parse(String(lead.modules)).join(", ") || "—"}`,`Сообщение: ${lead.message || "—"}`].join("\n");
   const response = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({chat_id:env.TELEGRAM_CHAT_ID,text})});
   return response.ok ? "sent" : "failed";
+}
+
+async function notifyLead(env: Env, lead: Record<string, unknown>): Promise<string> {
+  const deliveries: Promise<boolean>[] = [notifyEmail(env, lead)];
+  if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID) deliveries.push(notifyTelegram(env, lead).then(status => status === "sent"));
+  return (await Promise.all(deliveries)).some(Boolean) ? "sent" : "failed";
+}
+
+async function notifyEmail(env: Env, lead: Record<string, unknown>): Promise<boolean> {
+  const recipient = env.LEADS_EMAIL || "radiksun@list.ru";
+  const response = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(recipient)}`, {
+    method: "POST",
+    headers: { "content-type": "application/json", accept: "application/json" },
+    body: JSON.stringify({
+      _subject: `Новая заявка · ПРЕДВКУСИЕ · ${lead.name}`,
+      _template: "table",
+      _captcha: "false",
+      Повод: lead.eventType,
+      Имя: lead.name,
+      Контакт: lead.contact,
+      Дата: lead.eventDate || "Не указана",
+      Город: lead.city || "Не указан",
+      Гостей: lead.guestCount || "Не указано",
+      Бюджет: lead.budget || "Не указан",
+      Стиль: lead.selectedStyle || "Не указан",
+      Дополнения: JSON.parse(String(lead.modules)).join(", ") || "Не указаны",
+      Сообщение: lead.message || "Нет сообщения",
+    }),
+  });
+  return response.ok;
 }
 
 export default worker;
