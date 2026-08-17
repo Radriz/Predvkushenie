@@ -14,21 +14,21 @@ export function OccasionLanding({ occasion }: { occasion: Occasion }) {
       </div>
       <div className="occasion-veil" />
       <div className="occasion-heading">
-        <p>{occasion.number} / {occasion.eyebrow}</p><h1>{occasion.title}</h1>
+        <p>{occasion.eyebrow}</p><h1>{occasion.title}</h1>
         <div><span>{occasion.line}</span><span>ПОД КЛЮЧ · ОТ 5 ДНЕЙ</span></div>
       </div>
       <Link href={`/demo/${occasion.slug}`} className="round-demo-link" aria-label={`Открыть демо ${occasion.short}`}><span>Живое<br/>демо</span><b>↘</b></Link>
     </section>
     <section className="occasion-intro">
       <p>ПОЧЕМУ ЭТО РАБОТАЕТ</p><h2>{occasion.description}</h2>
-      <div className="feature-grid">{occasion.features.map((item,i)=><article key={item}><span>0{i+1}</span><h3>{item}</h3></article>)}</div>
+      <div className="feature-grid">{occasion.features.map(item=><article key={item}><h3>{item}</h3></article>)}</div>
     </section>
     <section className="preview-stage">
       <div className="preview-copy"><p>ЖИВОЙ ПРИМЕР</p><h2>Настоящее <br/>приглашение.</h2><p>Откройте и пройдите путь гостя.</p><Link href={`/demo/${occasion.slug}`} className="event-button">Смотреть демо <span>↗</span></Link></div>
       <div className="mini-phone"><div className="mini-phone-screen" style={{background:`linear-gradient(155deg, ${occasion.surface}, ${occasion.accent})`,color:occasion.text}}><small>{occasion.date}</small><h3>{occasion.names}</h3><p>{occasion.greeting}</p><span>ОТКРЫТЬ</span></div></div>
     </section>
     <section className="occasion-cta"><p>СЛЕДУЮЩАЯ ИСТОРИЯ — ВАША</p><h2>Создадим первое<br/>впечатление.</h2><Link href={`/order?event=${occasion.slug}`}>Начать проект <span>↗</span></Link></section>
-    <section className="other-directions"><p>ДРУГИЕ НАПРАВЛЕНИЯ</p><div>{occasionList.filter(x=>x.slug!==occasion.slug).map(x=><Link href={`/${x.slug}`} key={x.slug}><span>{x.number}</span>{x.short}<b>↗</b></Link>)}</div></section>
+    <section className="other-directions"><p>ДРУГИЕ НАПРАВЛЕНИЯ</p><div>{occasionList.filter(x=>x.slug!==occasion.slug).map(x=><Link href={`/${x.slug}`} key={x.slug}>{x.short}<b>↗</b></Link>)}</div></section>
     <SiteFooter />
   </main>;
 }

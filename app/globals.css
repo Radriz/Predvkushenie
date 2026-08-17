@@ -49,3 +49,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,
 }
 
 @media(prefers-reduced-motion:reduce){.demo-cover.is-opening,.demo-content,.demo-welcome::after,.story-art span,.story-art i,.story-art b{animation:none!important}.demo-cover.is-opening{opacity:0}.demo-program article{transition:none}}
+
+/* Clear-language pass: remove decorative numbering that does not convey order. */
+.home-preview li::before{content:"•";display:inline-block;width:28px}.feature-grid h3{margin-top:28px}.other-directions a{grid-template-columns:1fr 30px}.demo-story{grid-template-columns:1fr 1fr;gap:6vw}.demo-story>div:first-child>p:first-child{font-size:8px;letter-spacing:.18em}.demo-story>div:first-child>p{font-size:12px;line-height:1.5}.demo-program article{grid-template-columns:120px 1fr}.occasion-picks button{display:flex;align-items:center}.occasion-picks button b{margin-left:auto}.floating-note{padding-inline:16px}
+@media(max-width:600px){.feature-grid h3{margin-top:25px}.other-directions a{grid-template-columns:1fr 22px}.demo-story{grid-template-columns:1fr}.demo-welcome>span,.demo-countdown>p,.demo-countdown span,.demo-story>div:first-child>p:first-child,.demo-program>p,.demo-details article>p:first-child,.rsvp-copy>p{font-size:10px}.demo-program article{grid-template-columns:68px minmax(0,1fr)}}

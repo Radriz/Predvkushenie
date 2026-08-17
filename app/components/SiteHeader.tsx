@@ -12,7 +12,7 @@ export function SiteFooter() {
   return <footer className="site-footer">
     <div><Link className="brand" href="/">ПРЕДВКУСИЕ<span>°</span></Link><p>Событие начинается до события.</p></div>
     <div><p>НАПРАВЛЕНИЯ</p><Link href="/wedding">Свадьба</Link><Link href="/birthday">День рождения</Link><Link href="/kids">Детский</Link></div>
-    <div><p>ЕЩЁ</p><Link href="/business">Business</Link><Link href="/anniversary">Юбилей</Link><Link href="/baby">Baby</Link></div>
+    <div><p>ЕЩЁ</p><Link href="/business">Для бизнеса</Link><Link href="/anniversary">Юбилей</Link><Link href="/baby">Для малыша</Link></div>
     <div><p>ИНФОРМАЦИЯ</p><Link href="/privacy">Политика</Link><Link href="/terms">Условия</Link><Link href="/order">Оставить заявку</Link></div>
     <small>© 2026 ПРЕДВКУСИЕ · Концептуальный проект</small>
   </footer>;
