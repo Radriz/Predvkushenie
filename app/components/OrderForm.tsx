@@ -7,6 +7,16 @@ import { occasionList } from "../lib/occasions";
 type Draft={eventType:string;name:string;contact:string;eventDate:string;city:string;guestCount:string;budget:string;selectedStyle:string;modules:string[];musicMood:string;message:string;consent:boolean;website:string};
 const empty:Draft={eventType:"wedding",name:"",contact:"",eventDate:"",city:"",guestCount:"",budget:"PREMIUM — 4 990 ₽",selectedStyle:"Кинематографичный",modules:["Ответы гостей","Карта и программа"],musicMood:"Деликатный фон",message:"",consent:false,website:""};
 const moduleOptions=["Ответы гостей","Карта и программа","Музыка","Персональные ссылки","Список подарков","Чат гостей","Галерея после события"];
+const emailEndpoint="https://formsubmit.co/ajax/radiksun%40list.ru";
+
+async function deliverByEmail(draft:Draft){
+  const response=await fetch(emailEndpoint,{method:"POST",headers:{"content-type":"application/json",accept:"application/json"},body:JSON.stringify({
+    _subject:`Новая заявка · ПРЕДВКУСИЕ · ${draft.name}`,_template:"table",_captcha:"false",
+    Повод:draft.eventType,Имя:draft.name,Контакт:draft.contact,Дата:draft.eventDate||"Не указана",Город:draft.city||"Не указан",
+    Гостей:draft.guestCount||"Не указано",Тариф:draft.budget,Стиль:draft.selectedStyle,Дополнения:draft.modules.join(", ")||"Не указаны",Сообщение:draft.message||"Нет сообщения",
+  })});
+  return response.ok;
+}
 
 export function OrderForm(){
   const [step,setStep]=useState(1); const [draft,setDraft]=useState<Draft>(()=>{
@@ -25,7 +35,16 @@ export function OrderForm(){
   const progress=useMemo(()=>`${step}/4`,[step]);
   const patch=<K extends keyof Draft>(key:K,value:Draft[K])=>setDraft(d=>({...d,[key]:value}));
   const toggleModule=(value:string)=>patch("modules",draft.modules.includes(value)?draft.modules.filter(x=>x!==value):[...draft.modules,value]);
-  const submit=async(e:FormEvent)=>{e.preventDefault(); if(!draft.consent)return; setStatus("sending"); try{const response=await fetch("/api/leads",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({...draft,guestCount:Number(draft.guestCount||0),source:"website",idempotencyKey:crypto.randomUUID()})}); if(!response.ok)throw new Error(); setStatus("success"); localStorage.removeItem("pre-order-draft");}catch{setStatus("error")}};
+  const submit=async(e:FormEvent)=>{e.preventDefault(); if(!draft.consent)return; setStatus("sending"); try{
+    const [apiResult,emailResult]=await Promise.allSettled([
+      fetch("/api/leads",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({...draft,guestCount:Number(draft.guestCount||0),source:"website",idempotencyKey:crypto.randomUUID()})}),
+      deliverByEmail(draft),
+    ]);
+    const stored=apiResult.status==="fulfilled"&&apiResult.value.ok;
+    const emailed=emailResult.status==="fulfilled"&&emailResult.value;
+    if(!stored&&!emailed)throw new Error();
+    setStatus("success"); localStorage.removeItem("pre-order-draft");
+  }catch{setStatus("error")}};
   if(status==="success")return <div className="order-success"><span>✓</span><p>БРИФ ПОЛУЧЕН</p><h1>Первый кадр<br/>уже случился</h1><p>Мы изучим детали и свяжемся с вами в течение рабочего дня</p><Link href="/">Вернуться на главную ↗</Link></div>;
   return <form className="order-form" onSubmit={submit}>
     <div className="order-progress"><span>ШАГ {progress}</span><div><i style={{width:`${step*25}%`}}/></div><button type="button" onClick={()=>setStep(Math.max(1,step-1))} disabled={step===1}>← Назад</button></div>
