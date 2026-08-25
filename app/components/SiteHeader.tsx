@@ -14,6 +14,6 @@ export function SiteFooter() {
     <div><p>НАПРАВЛЕНИЯ</p><Link href="/wedding">Свадьба</Link><Link href="/birthday">День рождения</Link><Link href="/kids">Детский</Link></div>
     <div><p>ЕЩЁ</p><Link href="/business">Для бизнеса</Link><Link href="/anniversary">Юбилей</Link><Link href="/baby">Для малыша</Link></div>
     <div><p>ИНФОРМАЦИЯ</p><Link href="/cases">Кейсы</Link><Link href="/privacy">Политика</Link><Link href="/order">Оставить заявку</Link></div>
-    <small>© 2026 ПРЕДВКУСИЕ · Концептуальный проект</small>
+    <small>© 2026 ПРЕДВКУСИЕ · Студия цифровых приглашений</small>
   </footer>;
 }

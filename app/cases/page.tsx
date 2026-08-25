@@ -3,7 +3,7 @@ import {SiteFooter,SiteHeader} from "../components/SiteHeader";
 import {invitationCases} from "../lib/cases";
 import {CaseCollection} from "./CaseCollection";
 
-export const metadata:Metadata={title:"Кейсы — ПРЕДВКУСИЕ",description:"Коллекция готовых историй и самостоятельных сайтов-приглашений ПРЕДВКУСИЕ"};
+export const metadata:Metadata={title:"Кейсы — ПРЕДВКУСИЕ",description:"Коллекция готовых историй и самостоятельных сайтов-приглашений ПРЕДВКУСИЕ",alternates:{canonical:"/cases"}};
 
 export default function CasesPage(){return <main className="cases-page">
   <SiteHeader/>

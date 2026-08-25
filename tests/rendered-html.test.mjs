@@ -3,6 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import test from "node:test";
 import { getCalendarRange } from "../app/lib/calendar.ts";
 import { occasions as occasionData } from "../app/lib/occasions.ts";
+import { POST as submitLead } from "../app/api/leads/route.ts";
 
 const caseSlugs = [
   "wedding-glass-garden", "wedding-midnight-atlas", "wedding-saffron-tide", "wedding-winter-geometry", "wedding-paper-horizon",
@@ -55,6 +56,10 @@ test("server-renders every public route", async () => {
     );
     assert.equal(response.status, 200, route);
     assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i, route);
+    if (route === "/") {
+      assert.match(response.headers.get("content-security-policy") ?? "", /frame-ancestors 'none'/);
+      assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+    }
     const html = await response.text();
     assert.match(html, /ПРЕДВКУСИЕ|Открыть приглашение/i, route);
     assert.doesNotMatch(html, /Your site is taking shape|Building your site/i, route);
@@ -70,6 +75,53 @@ test("calendar ranges follow every occasion schedule", () => {
     assert.equal(occasion.durationMinutes, scheduleMinutes, `${occasion.slug} duration follows schedule`);
     const range = getCalendarRange(occasion.targetDate, occasion.durationMinutes);
     assert.equal((compactUtc(range.end) - compactUtc(range.start)) / 60_000, scheduleMinutes, `${occasion.slug} calendar range`);
+    assert.ok(new Date(occasion.targetDate).getTime() - 21 * 86_400_000 > Date.now(), `${occasion.slug} RSVP deadline stays in the future`);
+  }
+});
+
+test("publishes robots and a complete sitemap", async () => {
+  const worker = await loadWorker();
+  const robots = await worker.fetch(new Request("http://localhost/robots.txt"), environment(), { waitUntil() {}, passThroughOnException() {} });
+  assert.equal(robots.status, 200);
+  assert.match(await robots.text(), /Sitemap: https:\/\/predvkushenie\.vercel\.app\/sitemap\.xml/);
+  const sitemap = await worker.fetch(new Request("http://localhost/sitemap.xml"), environment(), { waitUntil() {}, passThroughOnException() {} });
+  assert.equal(sitemap.status, 200);
+  const xml = await sitemap.text();
+  assert.match(xml, /\/cases\/baby-lavender-moon/);
+  assert.match(xml, /\/demo\/business/);
+});
+
+test("publishes canonical and social metadata on representative pages", async () => {
+  const worker = await loadWorker();
+  const expected = [
+    ["/", "https://predvkushenie.vercel.app", "/og.jpg"],
+    ["/wedding", "https://predvkushenie.vercel.app/wedding", "/media/wedding.jpg"],
+    ["/demo/wedding", "https://predvkushenie.vercel.app/demo/wedding", "/media/wedding.jpg"],
+    ["/cases/baby-cloud-brunch", "https://predvkushenie.vercel.app/cases/baby-cloud-brunch", "/cases/baby-cloud-brunch/hero.webp"],
+  ];
+  for (const [route, canonical, socialImage] of expected) {
+    const response = await worker.fetch(new Request(`http://localhost${route}`), environment(), { waitUntil() {}, passThroughOnException() {} });
+    assert.equal(response.status, 200, route);
+    const html = await response.text();
+    assert.match(html, new RegExp(`<link[^>]+rel="canonical"[^>]+href="${canonical.replaceAll("/", "\\/")}"`), `${route} canonical`);
+    assert.match(html, new RegExp(`<meta[^>]+property="og:image"[^>]+content="https:\\/\\/predvkushenie\\.vercel\\.app${socialImage.replaceAll("/", "\\/")}"`), `${route} Open Graph image`);
+  }
+});
+
+test("lead API sends once and treats a repeated key as a duplicate", async () => {
+  const originalFetch = globalThis.fetch;
+  let deliveries = 0;
+  globalThis.fetch = async () => { deliveries += 1; return new Response("{}", { status: 200 }); };
+  try {
+    const body = { eventType:"wedding", name:"Тест", contact:"test@example.ru", consent:true, website:"", idempotencyKey:"automated-test-lead-1" };
+    const first = await submitLead(new Request("http://localhost/api/leads", { method:"POST", headers:{"content-type":"application/json",origin:"http://localhost","x-forwarded-for":"198.51.100.10"}, body:JSON.stringify(body) }));
+    assert.equal(first.status, 201);
+    const second = await submitLead(new Request("http://localhost/api/leads", { method:"POST", headers:{"content-type":"application/json",origin:"http://localhost","x-forwarded-for":"198.51.100.10"}, body:JSON.stringify(body) }));
+    assert.equal(second.status, 200);
+    assert.equal(deliveries, 1);
+    assert.equal((await second.json()).duplicate, true);
+  } finally {
+    globalThis.fetch = originalFetch;
   }
 });
 

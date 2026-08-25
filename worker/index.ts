@@ -33,29 +33,41 @@ const worker = {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/leads" && request.method === "POST") {
-      return handleLead(request, env, ctx);
+      return withSecurityHeaders(await handleLead(request, env, ctx));
     }
 
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
-      return handleImageOptimization(request, {
+      return withSecurityHeaders(await handleImageOptimization(request, {
         fetchAsset: (path) => env.ASSETS.fetch(new Request(new URL(path, request.url))),
         transformImage: async (body, { width, format, quality }) => {
           const result = await env.IMAGES.input(body).transform(width > 0 ? { width } : {}).output({ format, quality });
           return result.response();
         },
-      }, allowedWidths);
+      }, allowedWidths));
     }
 
-    return handler.fetch(request, env, ctx);
+    return withSecurityHeaders(await handler.fetch(request, env, ctx));
   },
 };
+
+function withSecurityHeaders(response: Response): Response {
+  const headers = new Headers(response.headers);
+  headers.set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  headers.set("X-Frame-Options", "DENY");
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
 
 const allowedEvents = new Set(["wedding", "birthday", "kids", "business", "anniversary", "baby"]);
 function clean(value: unknown, max = 500): string { return typeof value === "string" ? value.trim().slice(0, max) : ""; }
 
 async function handleLead(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   try {
+    const requestUrl = new URL(request.url); const origin = request.headers.get("origin");
+    if (origin && origin !== requestUrl.origin) return Response.json({ error: "invalid_origin" }, { status: 403 });
     const data = await request.json() as Record<string, unknown>;
     if (clean(data.website, 100)) return Response.json({ ok: true });
     const eventType = clean(data.eventType, 30); const name = clean(data.name, 120); const contact = clean(data.contact, 180);
@@ -64,10 +76,20 @@ async function handleLead(request: Request, env: Env, ctx: ExecutionContext): Pr
     const modules = Array.isArray(data.modules) ? data.modules.map(x => clean(x, 60)).filter(Boolean).slice(0, 12) : [];
     await env.DB.batch([
       env.DB.prepare("CREATE TABLE IF NOT EXISTS leads (id TEXT PRIMARY KEY, created_at INTEGER NOT NULL, event_type TEXT NOT NULL, name TEXT NOT NULL, contact TEXT NOT NULL, event_date TEXT, city TEXT, guest_count INTEGER, budget TEXT, selected_style TEXT, modules TEXT, music_mood TEXT, message TEXT, source TEXT, notify_status TEXT NOT NULL DEFAULT 'pending')"),
-      env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_leads_created_at ON leads(created_at)")
+      env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_leads_created_at ON leads(created_at)"),
+      env.DB.prepare("CREATE TABLE IF NOT EXISTS lead_rate_limits (key TEXT PRIMARY KEY, count INTEGER NOT NULL DEFAULT 1, expires_at INTEGER NOT NULL)"),
+      env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_lead_rate_limits_expires_at ON lead_rate_limits(expires_at)")
     ]);
+    const now = Date.now(); const ip = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ip));
+    const rateKey = Array.from(new Uint8Array(digest).slice(0, 12), value => value.toString(16).padStart(2, "0")).join("");
+    await env.DB.prepare("DELETE FROM lead_rate_limits WHERE expires_at <= ?").bind(now).run();
+    await env.DB.prepare("INSERT INTO lead_rate_limits (key, count, expires_at) VALUES (?, 1, ?) ON CONFLICT(key) DO UPDATE SET count = count + 1").bind(rateKey, now + 600000).run();
+    const rateRow = await env.DB.prepare("SELECT count FROM lead_rate_limits WHERE key = ?").bind(rateKey).first<{count:number}>();
+    if ((rateRow?.count || 0) > 5) return Response.json({ error: "rate_limited" }, { status: 429, headers: { "retry-after": "600" } });
     const values = { id, createdAt: Date.now(), eventType, name, contact, eventDate:clean(data.eventDate,30), city:clean(data.city,120), guestCount:Math.max(0,Math.min(100000,Number(data.guestCount)||0)), budget:clean(data.budget,80), selectedStyle:clean(data.selectedStyle,100), modules:JSON.stringify(modules), musicMood:clean(data.musicMood,100), message:clean(data.message,2000), source:clean(data.source,80)||"website" };
-    await env.DB.prepare("INSERT OR IGNORE INTO leads (id, created_at, event_type, name, contact, event_date, city, guest_count, budget, selected_style, modules, music_mood, message, source, notify_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')").bind(values.id,values.createdAt,values.eventType,values.name,values.contact,values.eventDate,values.city,values.guestCount,values.budget,values.selectedStyle,values.modules,values.musicMood,values.message,values.source).run();
+    const insertResult = await env.DB.prepare("INSERT OR IGNORE INTO leads (id, created_at, event_type, name, contact, event_date, city, guest_count, budget, selected_style, modules, music_mood, message, source, notify_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')").bind(values.id,values.createdAt,values.eventType,values.name,values.contact,values.eventDate,values.city,values.guestCount,values.budget,values.selectedStyle,values.modules,values.musicMood,values.message,values.source).run();
+    if (!insertResult.meta.changes) return Response.json({ ok: true, id, duplicate: true });
     ctx.waitUntil(notifyLead(env, values).then(status => env.DB.prepare("UPDATE leads SET notify_status = ? WHERE id = ?").bind(status,id).run()).catch(()=>env.DB.prepare("UPDATE leads SET notify_status = 'failed' WHERE id = ?").bind(id).run()));
     return Response.json({ ok: true, id }, { status: 201 });
   } catch { return Response.json({ error: "server_error" }, { status: 500 }); }

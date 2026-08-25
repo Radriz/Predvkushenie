@@ -6,12 +6,20 @@ import type { Occasion } from "../lib/occasions";
 import { getCalendarRange } from "../lib/calendar";
 import { EventVideo } from "./EventVideo";
 
+const deadlineFormatter = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", timeZone: "Europe/Moscow" });
+
 function useCountdown(target: string) {
   const calculate = useCallback(() => Math.max(0, new Date(target).getTime() - Date.now()), [target]);
   const [left, setLeft] = useState<number|null>(null);
   useEffect(() => { const initial=window.setTimeout(()=>setLeft(calculate()),0); const id = window.setInterval(() => setLeft(calculate()), 1000); return () => {window.clearTimeout(initial);window.clearInterval(id)}; }, [calculate]);
   if(left===null)return { days:"—", hours:"—", minutes:"—", seconds:"—" };
   return { days: Math.floor(left/86400000), hours: Math.floor(left/3600000)%24, minutes: Math.floor(left/60000)%60, seconds: Math.floor(left/1000)%60 };
+}
+
+function rsvpDeadline(target: string) {
+  const value = new Date(target);
+  value.setUTCDate(value.getUTCDate() - 21);
+  return deadlineFormatter.format(value);
 }
 
 function SoundToggle({ accent }: { accent: string }) {
@@ -57,7 +65,7 @@ export function DemoExperience({ occasion }: { occasion: Occasion }) {
       <section className="demo-story"><div><p>МЕСТО</p><h2>{occasion.venue}</h2><p>{occasion.address}</p><div className="story-actions"><a href={occasion.mapUrl} target="_blank" rel="noreferrer">Открыть карту ↗</a><a href={calendarUrl} target="_blank" rel="noreferrer">В календарь +</a></div></div><div className="story-art"><span/><i/><b/></div></section>
       <section className="demo-program"><p>ПРОГРАММА</p><h2>{programTitle}</h2><div>{occasion.schedule.map(item=><article key={item.time}><span>{item.time}</span><div><h3>{item.title}</h3><p>{item.note}</p></div></article>)}</div></section>
       <section className="demo-details"><article><p>ДРЕСС-КОД</p><h2>Ваша палитра</h2><div className="palette"><i/><i/><i/><i/></div><p>{occasion.dress}</p></article><article><p>ПОЖЕЛАНИЕ</p><h2>Главное —<br/>быть рядом</h2><p>{occasion.gift}</p></article></section>
-      <section className="demo-rsvp"><div className="rsvp-copy"><p>ОТВЕТ ГОСТЯ</p><h2>Вы с нами?</h2><p>Ответьте до 20 августа</p><small>{occasion.contact}</small></div>
+      <section className="demo-rsvp"><div className="rsvp-copy"><p>ОТВЕТ ГОСТЯ</p><h2>Вы с нами?</h2><p>Ответьте до {rsvpDeadline(occasion.targetDate)}</p><small>{occasion.contact}</small></div>
         {!sent ? <form onSubmit={e=>{e.preventDefault();setSent(true)}}><label>Имя и фамилия<input required name="name" placeholder="Анна Смирнова"/></label><fieldset><legend>Будете с нами?</legend><label><input type="radio" name="attending" value="yes" checked={attending==="yes"} onChange={()=>setAttending("yes")}/> Да</label><label><input type="radio" name="attending" value="no" checked={attending==="no"} onChange={()=>setAttending("no")}/> Не смогу</label></fieldset>{attending==="yes"&&extraQuestions.map((question,index)=><label key={question}>{question}<input name={`detail-${index}`} placeholder="Ваш ответ"/></label>)}<label>Комментарий<textarea name="note" placeholder="Если хотите что-то добавить"/></label><button type="submit">Отправить ответ <span>↗</span></button><small className="demo-form-note">Демо: ответ не отправляется</small></form> : <div className="rsvp-success"><span>✓</span><h3>Ответ отправлен</h3><p>Демо завершено. Спасибо!</p></div>}
       </section>
       <section className="demo-finale"><p>ДО СКОРОЙ ВСТРЕЧИ</p><h2>{occasion.names}</h2><p>{occasion.date}</p><Link href={`/order?event=${occasion.slug}`}>Хочу такое приглашение ↗</Link><small>Демонстрация · все данные вымышлены</small></section>

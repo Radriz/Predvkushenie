@@ -1,7 +1,10 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { occasionList } from "./lib/occasions";
 import { SiteFooter } from "./components/SiteHeader";
 import { EventVideo } from "./components/EventVideo";
+
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 const occasions = ["Свадьба", "День рождения", "Детский праздник", "Деловое событие", "Юбилей", "Праздник для малыша"];
 
@@ -74,7 +77,7 @@ export default function Home() {
             <div className="phone-top"><span /></div>
             <div className="invitation-card">
               <p>ПРИГЛАШЕНИЕ НА СВАДЬБУ</p><h2>Алексей<br /><em>&amp;</em> София</h2>
-              <div className="date-line"><span />12 · 09 · 2026<span /></div>
+              <div className="date-line"><span />12 · 09 · 2027<span /></div>
               <p className="invite-note">Будем счастливы разделить<br />этот день вместе с вами</p>
               <button type="button">ОТКРЫТЬ ПРИГЛАШЕНИЕ</button>
             </div>
@@ -97,7 +100,7 @@ export default function Home() {
         <div className="direction-grid">{occasionList.map(item=><Link href={`/${item.slug}`} className={`direction-card card-${item.slug}`} key={item.slug} style={{"--card-accent":item.accent,"--card-surface":item.surface,"--card-text":item.text} as React.CSSProperties}><div className="direction-image"><EventVideo slug={item.slug}/></div><div><p>{item.eyebrow}</p><h3>{item.short}</h3><span>{item.line}</span><b>↗</b></div></Link>)}</div>
       </section>
       <section className="home-preview">
-        <div className="home-preview-phone"><div><small>ПЕРСОНАЛЬНО ДЛЯ ВАС</small><h3>АЛЕКСЕЙ<br/><i>&amp;</i> СОФИЯ</h3><p>12 · 09 · 2026</p><button>Открыть приглашение</button></div></div>
+        <div className="home-preview-phone"><div><small>ПЕРСОНАЛЬНО ДЛЯ ВАС</small><h3>АЛЕКСЕЙ<br/><i>&amp;</i> СОФИЯ</h3><p>12 · 09 · 2027</p><button>Открыть приглашение</button></div></div>
         <div><p>ГОСТЕВОЙ ОПЫТ</p><h2>Красиво для гостя<br/>Спокойно для вас</h2><ul><li>Персональное обращение</li><li>Ответ за 20 секунд</li><li>Карта, таймер и программа</li><li>Музыка и напоминания</li></ul><Link href="/demo/wedding">Пройти путь гостя ↗</Link></div>
       </section>
       <section className="process" id="process"><header><p>КАК МЫ РАБОТАЕМ</p><h2>От разговора<br/>до первой отправки</h2></header><div>{[["Знакомимся","20 минут, чтобы услышать атмосферу события"],["Предлагаем сцену","Палитра, типографика, движение и тон текста"],["Собираем историю","Видео, программа, карта, музыка и форма ответа"],["Запускаем","Тестируем на телефонах и отдаём личную ссылку"]].map(([title,description])=><article key={title}><h3>{title}</h3><p>{description}</p></article>)}</div></section>

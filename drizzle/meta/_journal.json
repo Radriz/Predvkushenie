@@ -15,6 +15,13 @@
       "when": 1786910874307,
       "tag": "0001_puzzling_microchip",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1787680219954,
+      "tag": "0002_concerned_network",
+      "breakpoints": true
     }
   ]
 }

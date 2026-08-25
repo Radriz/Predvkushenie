@@ -1,6 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
 import type {Metadata} from "next";
-import {headers} from "next/headers";
 import Link from "next/link";
 import {notFound} from "next/navigation";
 import {CaseVideo} from "../CaseVideo";
@@ -9,14 +8,15 @@ import {SaffronTideCase} from "../SaffronTideCase";
 import {PrivatePremiereCase} from "../PrivatePremiereCase";
 import {PhotoInvitationCase} from "../PhotoInvitationCase";
 import {getInvitationCase,invitationCases} from "../../lib/cases";
+import {absoluteUrl} from "../../lib/site";
 
 export function generateStaticParams(){return invitationCases.map(item=>({slug:item.slug}))}
 
 export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{
   const item=getInvitationCase((await params).slug); if(!item)return {};
-  const requestHeaders=await headers(); const host=requestHeaders.get("host")||"localhost:3000"; const protocol=requestHeaders.get("x-forwarded-proto")||"http"; const image=new URL(item.image,`${protocol}://${host}`).toString();
+  const image=absoluteUrl(item.image);
   const title=`${item.title} — ${item.couple} · ПРЕДВКУСИЕ`;
-  return {title,description:item.description,openGraph:{title,description:item.description,images:[image]},twitter:{card:"summary_large_image",title,description:item.description,images:[image]}};
+  return {title,description:item.description,alternates:{canonical:absoluteUrl(`/cases/${item.slug}`)},openGraph:{title,description:item.description,images:[image]},twitter:{card:"summary_large_image",title,description:item.description,images:[image]}};
 }
 
 export default async function InvitationCasePage({params}:{params:Promise<{slug:string}>}){
