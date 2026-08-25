@@ -13,11 +13,11 @@ export function CaseCollection({items}:{items:CaseCardItem[]}){
   const [active,setActive]=useState<(typeof filters)[number]["key"]>("all");
   const visible=active==="all"?items:items.filter(item=>item.eventType===active);
   return <>
-    <nav className="case-filters" aria-label="Фильтры кейсов">{filters.map(filter=><button type="button" className={active===filter.key?"active":""} aria-pressed={active===filter.key} onClick={()=>setActive(filter.key)} key={filter.key}>{filter.label}</button>)}</nav>
+    <div className="case-filters-wrap"><nav className="case-filters" aria-label="Фильтры кейсов">{filters.map(filter=><button type="button" className={active===filter.key?"active":""} aria-pressed={active===filter.key} onClick={()=>setActive(filter.key)} key={filter.key}>{filter.label}</button>)}</nav><span aria-hidden="true">Листайте →</span></div>
     <section className="cases-grid" aria-label="Кейсы">
       {visible.map((item,index)=><Link className="case-card" href={`/cases/${item.slug}`} key={item.slug}>
         <div className="case-card-media"><img src={item.image} alt="" loading={index===0?"eager":"lazy"}/><span>{item.eventLabel}</span></div>
-        <div><p>{item.city} · {item.date}</p><h2>{item.title}</h2><span>{item.couple}</span><b>Открыть кейс ↗</b></div>
+        <div><p>{item.city} · {item.date}</p><h2>{item.title}</h2><span>{item.eventLabel} · {item.couple}</span><b>Открыть кейс ↗</b></div>
       </Link>)}
       {visible.length===0?<div className="cases-empty" role="status"><p>Эта часть коллекции готовится</p><span>Новый кейс появится здесь после отдельной визуальной проверки</span></div>:null}
     </section>

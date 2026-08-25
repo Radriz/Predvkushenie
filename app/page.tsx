@@ -55,7 +55,8 @@ export default function Home() {
     <main className="home-shell">
       <nav className="topbar" aria-label="Главная навигация">
         <Link className="brand" href="/" aria-label="Предвкусие — на главную">ПРЕДВКУСИЕ<span>°</span></Link>
-        <div className="nav-links"><a href="#occasions">Поводы</a><a href="#prices">Стоимость</a></div>
+        <div className="nav-links"><Link href="/cases">Кейсы</Link><a href="#occasions">Поводы</a><a href="#prices">Стоимость</a></div>
+        <details className="mobile-menu home-mobile-menu"><summary aria-label="Открыть меню"><span>Меню</span><i>+</i></summary><div><Link href="/cases">Кейсы</Link><a href="#directions">Направления</a><a href="#prices">Тарифы</a><Link href="/order">Создать приглашение</Link></div></details>
         <Link className="nav-cta" href="/order">Создать приглашение</Link>
       </nav>
       <section className="hero">
@@ -106,9 +107,9 @@ export default function Home() {
       <section className="process" id="process"><header><p>КАК МЫ РАБОТАЕМ</p><h2>От разговора<br/>до первой отправки</h2></header><div>{[["Знакомимся","20 минут, чтобы услышать атмосферу события"],["Предлагаем сцену","Палитра, типографика, движение и тон текста"],["Собираем историю","Видео, программа, карта, музыка и форма ответа"],["Запускаем","Тестируем на телефонах и отдаём личную ссылку"]].map(([title,description])=><article key={title}><h3>{title}</h3><p>{description}</p></article>)}</div></section>
       <section className="prices" id="prices">
         <header><p>ПРОЗРАЧНАЯ СТОИМОСТЬ</p><h2>Выберите свой<br/>формат приглашения</h2></header>
-        <div className="price-grid">{plans.map((plan, index) => <article className={index === 1 ? "featured" : index === 2 ? "signature" : ""} key={plan.name}>
+        <div className="price-grid">{plans.map((plan, index) => <article className={index === 0 ? "essential" : index === 1 ? "featured" : "signature"} key={plan.name}>
           {plan.badge && <i>{plan.badge}</i>}<p>{plan.name}</p><h3>{plan.price} <span>₽</span></h3><strong>{plan.note}</strong>
-          <ul>{plan.items.map(([item, explanation]) => <li key={item}><details><summary><span>{item}</span><i aria-hidden="true">?</i></summary><p>{explanation}</p></details></li>)}</ul><Link href={`/order?plan=${plan.name.toLowerCase()}`}>Выбрать <span>↗</span></Link>
+          <ul>{plan.items.map(([item, explanation]) => <li key={item}><details><summary><span>{item}</span><i aria-hidden="true">+</i></summary><p>{explanation}</p></details></li>)}</ul><Link href={`/order?plan=${plan.name.toLowerCase()}`}>Выбрать <span>↗</span></Link>
         </article>)}</div>
         <div className="extras-header"><p>ДОПОЛНИТЕЛЬНО</p><h3>Соберите приглашение под себя</h3><span>Можно добавить к START и PREMIUM</span></div>
         <div className="extras-grid">{extras.map(([name, price]) => <article key={name}><span>{name}</span><b>{price}</b></article>)}</div>

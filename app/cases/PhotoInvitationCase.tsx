@@ -6,7 +6,8 @@ const eventNames:Record<InvitationCase["eventType"],string>={wedding:"Сваде
 
 export function PhotoInvitationCase({item}:{item:InvitationCase}){
   const dateParts=item.date.split(" ");
-  return <main className={`photo-case photo-${item.eventType} photo-${item.variant??"split"}`} style={{"--photo-bg":item.palette[0],"--photo-accent":item.palette[1],"--photo-ink":item.palette[2],"--photo-soft":item.palette[3]} as React.CSSProperties}>
+  const edition=(item.slug.split("").reduce((total,letter)=>total+letter.charCodeAt(0),0)%3)+1;
+  return <main className={`photo-case photo-${item.eventType} photo-${item.variant??"split"} photo-edition-${edition}`} style={{"--photo-bg":item.palette[0],"--photo-accent":item.palette[1],"--photo-ink":item.palette[2],"--photo-soft":item.palette[3]} as React.CSSProperties}>
     <nav className="photo-nav"><Link href="/cases">Все кейсы</Link><span>ПРЕДВКУСИЕ · {eventNames[item.eventType]}</span><Link href={`/order?event=${item.eventType}`}>Создать своё ↗</Link></nav>
     <section className="photo-hero">
       <div className="photo-hero-media"><img src={item.image} alt={item.photoAlt??"Атмосфера события"}/></div>

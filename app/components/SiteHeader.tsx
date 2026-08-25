@@ -4,6 +4,7 @@ export function SiteHeader({ light = false }: { light?: boolean }) {
   return <header className={`site-header${light ? " site-header-light" : ""}`}>
     <Link className="brand" href="/">ПРЕДВКУСИЕ<span>°</span></Link>
     <nav aria-label="Основная навигация"><Link href="/cases">Кейсы</Link><Link href="/#directions">Направления</Link><Link href="/#prices">Тарифы</Link></nav>
+    <details className="mobile-menu"><summary aria-label="Открыть меню"><span>Меню</span><i>+</i></summary><div><Link href="/cases">Кейсы</Link><Link href="/#directions">Направления</Link><Link href="/#prices">Тарифы</Link><Link href="/order">Обсудить событие</Link></div></details>
     <Link className="header-order" href="/order">Обсудить событие <span>↗</span></Link>
   </header>;
 }
